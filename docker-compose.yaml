@@ -1,7 +1,20 @@
 services:
 
+  backend:
+    #image: python:3-alpine
+    build: ./img_backend/.
+    command: python /python-flask/app.py
+    restart: always
+    ports:
+    - 8083:8083
+    volumes:
+    - $PWD/img_backend/:/python-flask/
+    depends_on:
+    - db
+    - redis
+
   db:
-    image: mysql:5.7
+    image: mysql
     volumes:
     - db_data:/var/lib/mysql
     restart: always
@@ -15,13 +28,12 @@ services:
     image: redis:alpine
     command: "redis-server --requirepass ComplexPa55word1"
     ports:
-     - 6379:6379
+    - 6379:6379
     volumes:
-     - $PWD/redis/redis-data:/var/lib/redis
-     - $PWD/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    - $PWD/img_redis/redis-data:/var/lib/redis
+    - $PWD/img_redis/redis.conf:/usr/local/etc/redis/redis.conf
     environment:
-     - REDIS_REPLICATION_MODE=master
-
+    - REDIS_REPLICATION_MODE=master
     networks:
       node_net:
         ipv4_address: 172.28.1.10
