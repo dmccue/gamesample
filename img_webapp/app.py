@@ -1,9 +1,18 @@
 import time, os
-import redis
+import redis, mysql.connector
 from flask import Flask
 
 app = Flask(__name__)
 cache = redis.Redis(host='redis', port=6379, password=os.environ['REDIS_AUTH'])
+
+mysqlcon = mysql.connector.connect(
+          user=os.environ['MYSQL_USER'],
+          password=os.environ['MYSQL_PASSWORD'],
+          host='mysql',
+          database=os.environ['MYSQL_DATABASE']
+)
+#mysqlcon.close()
+
 
 def get_hit_count():
   retries = 5
