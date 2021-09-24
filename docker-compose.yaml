@@ -1,18 +1,22 @@
 services:
 
-  nginx:
+  nginxlb:
     depends_on:
     - webapp 
     image: nginx:alpine
     volumes:
-    - ./img_nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./img_nginxlb/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
     - '8083:4000'
+    networks:
+    - frontnet
 
   webapp:
     depends_on:
-    - db
-    - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     build: ./img_webapp/.
     command: flask run --host=0.0.0.0
     restart: always
@@ -24,7 +28,10 @@ services:
     environment:
       FLASK_APP: app
       FLASK_ENV: development
-      REDIS_AUTH: 'ComplexPa55word1'
+      REDIS_AUTH: "${REDIS_AUTH}"
+    networks:
+    - frontnet
+    - backnet
 
   db:
     image: mysql
@@ -32,21 +39,35 @@ services:
     - db_data:/var/lib/mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: somewordpress
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD:      "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE:           "${MYSQL_DATABASE}" 
+      MYSQL_USER:               "${MYSQL_USER}"
+      MYSQL_PASSWORD:           "${MYSQL_PASSWORD}"
+    networks:
+    - backnet
+    healthcheck:
+      test: ["CMD", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 3s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:alpine
-    command: "redis-server --requirepass ComplexPa55word1"
-    ports:
-    - 6379
+    command: "redis-server --requirepass ${REDIS_AUTH}"
+    #ports:
+    #- 6379
     volumes:
     - $PWD/img_redis/redis-data:/var/lib/redis
     - $PWD/img_redis/redis.conf:/usr/local/etc/redis/redis.conf
     environment:
     - REDIS_REPLICATION_MODE=master
+    networks:
+    - backnet
+    healthcheck:
+      test: ["CMD", "redis-cli ping"]
+      interval: 3s
+      retries: 5
+      start_period: 30s
       #    networks:
       #node_net:
       #  ipv4_address: 172.28.1.10
@@ -60,3 +81,7 @@ services:
 
 volumes:
   db_data: {}
+
+networks:
+  backnet:
+  frontnet:
