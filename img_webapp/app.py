@@ -16,10 +16,15 @@ def getMySqlConnector():
 def getRedisConnection():
   return redis.Redis(host='redis', port=6379, password=os.environ['REDIS_AUTH'])
 
-def sqlLookupPlayer(player_name):
+def sqlLookupPlayer(player_id, player_name):
   mysqlcon = getMySqlConnector()
   cursor = mysqlcon.cursor(buffered=True)
-  query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player WHERE player_name = '" + player_name + "'"
+  if player_name:
+    query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player WHERE player_name = '" + player_name + "';"
+  elif player_id:
+    query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player WHERE id = " + player_id + ";"
+  else:
+    return False
   cursor.execute(query)
   if cursor.rowcount < 1:
     return False
@@ -32,8 +37,8 @@ def sqlLookupPlayer(player_name):
 def player_create():
   data = json.loads(request.data)
 
-  lookupRow = sqlLookupPlayer(data['name'])
   # 1. store id and name in mysql
+  lookupRow = sqlLookupPlayer(None, data['name'])
   if lookupRow:
     return jsonify("ERROR: record " + data['name'] + " already exists"), 500
   
@@ -64,18 +69,32 @@ def player_get():
   data = json.loads(request.data)
 
   # 1. retrieve id and name from mysql
-  lookupRow = sqlLookupPlayer(data['name'])
+  if 'id' in data.keys():
+    lookupRow = sqlLookupPlayer(data['id'], None)
+  elif 'name' in data.keys():
+    lookupRow = sqlLookupPlayer(None, data['name'])
   if not lookupRow:
-    return jsonify("ERROR: unable to find name: " + data['name']), 404
+    return jsonify("ERROR: unable to find player"), 404
+
+  rowArr = list(lookupRow)
+
 
   # 2. retrieve gold from redis
   cache = getRedisConnection()
-  goldcount = cache.get( lookupRow[0] )
+  if cache.exists( str(rowArr[0]) ):
+    goldcount = cache.get( rowArr[0] )
+  else:
+    goldcount = 0
 
-  if goldcount:
-    data['gold'] = int(goldcount)
+  # 3. Sync redis and mysql
+  if rowArr[2] != goldcount:
+    mysqlcon = getMySqlConnector()
+    cursor = mysqlcon.cursor(buffered=True)
+    query = "UPDATE " + os.environ['MYSQL_DATABASE'] + ".player SET gold_amount = " + str(goldcount) + " WHERE id = " + str(rowArr[0]) + ";"
+    cursor.execute(query)
+    rowArr[2] = goldcount
 
-  return str(data), 200
+  return str(rowArr), 200
 
 
 @app.route('/')
