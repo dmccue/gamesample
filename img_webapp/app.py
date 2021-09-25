@@ -28,7 +28,7 @@ def sqlLookupPlayer(player_id, player_name):
   cursor.execute(query)
   if cursor.rowcount < 1:
     return False
-  return cursor.fetchone()
+  return list(cursor.fetchone())
 
 ###################
 # Player CREATE
@@ -39,7 +39,7 @@ def player_create():
 
   # 1. store id and name in mysql
   lookupRow = sqlLookupPlayer(None, data['name'])
-  if lookupRow:
+  if len(lookupRow):
     return jsonify("ERROR: record " + data['name'] + " already exists"), 500
   
   mysqlcon = getMySqlConnector()
@@ -69,6 +69,7 @@ def player_get():
   data = json.loads(request.data)
 
   # 1. retrieve id and name from mysql
+  lookupRow = None
   if 'id' in data.keys():
     lookupRow = sqlLookupPlayer(data['id'], None)
   elif 'name' in data.keys():
@@ -76,25 +77,22 @@ def player_get():
   if not lookupRow:
     return jsonify("ERROR: unable to find player"), 404
 
-  rowArr = list(lookupRow)
-
-
   # 2. retrieve gold from redis
   cache = getRedisConnection()
-  if cache.exists( str(rowArr[0]) ):
-    goldcount = cache.get( rowArr[0] )
+  if cache.exists( str(lookupRow[0]) ):
+    goldcount = cache.get( lookupRow[0] )
   else:
     goldcount = 0
 
   # 3. Sync redis and mysql
-  if rowArr[2] != goldcount:
+  if lookupRow[2] != goldcount:
     mysqlcon = getMySqlConnector()
     cursor = mysqlcon.cursor(buffered=True)
-    query = "UPDATE " + os.environ['MYSQL_DATABASE'] + ".player SET gold_amount = " + str(goldcount) + " WHERE id = " + str(rowArr[0]) + ";"
+    query = "UPDATE " + os.environ['MYSQL_DATABASE'] + ".player SET gold_amount = " + str(goldcount) + " WHERE id = " + str(goldcount) + ";"
     cursor.execute(query)
-    rowArr[2] = goldcount
+    lookupRow[2] = goldcount
 
-  return str(rowArr), 200
+  return str(lookupRow), 200
 
 
 @app.route('/')

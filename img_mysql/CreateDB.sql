@@ -1,4 +1,5 @@
 CREATE DATABASE IF NOT EXISTS gamesample;
+
 DROP TABLE IF EXISTS gamesample.player;
 
 CREATE TABLE gamesample.player (
