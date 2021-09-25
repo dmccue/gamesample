@@ -27,7 +27,7 @@ def sqlLookupPlayer(player_id, player_name):
     return False
   cursor.execute(query)
   if cursor.rowcount < 1:
-    return False
+    return [] 
   return list(cursor.fetchone())
 
 ###################
@@ -39,7 +39,7 @@ def player_create():
 
   # 1. store id and name in mysql
   lookupRow = sqlLookupPlayer(None, data['name'])
-  if len(lookupRow):
+  if lookupRow:
     return jsonify("ERROR: record " + data['name'] + " already exists"), 500
   
   mysqlcon = getMySqlConnector()
@@ -49,7 +49,6 @@ def player_create():
   mysqlcon.commit()
   cursor.close()
 
-    
 
   # 2. store id and gold in redis
   cache = getRedisConnection()
@@ -80,9 +79,10 @@ def player_get():
   # 2. retrieve gold from redis
   cache = getRedisConnection()
   if cache.exists( str(lookupRow[0]) ):
-    goldcount = cache.get( lookupRow[0] )
+    goldcount = int(cache.get( lookupRow[0] ))
   else:
-    goldcount = 0
+    goldcount = int(lookupRow[2])
+    cache.mset({ lookupRow[0]: str(goldcount) })
 
   # 3. Sync redis and mysql
   if lookupRow[2] != goldcount:
