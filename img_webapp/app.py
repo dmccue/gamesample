@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-
+# Functions
 def getMySqlConnector():
     return mysql.connector.connect(
               user=os.environ['MYSQL_USER'],
@@ -16,6 +16,15 @@ def getMySqlConnector():
 def getRedisConnection():
   return redis.Redis(host='redis', port=6379, password=os.environ['REDIS_AUTH'])
 
+def sqlLookupPlayer(player_name):
+  mysqlcon = getMySqlConnector()
+  cursor = mysqlcon.cursor(buffered=True)
+  query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player WHERE player_name = '" + player_name + "'"
+  cursor.execute(query)
+  if cursor.rowcount < 1:
+    return False
+  return cursor.fetchone()
+
 ###################
 # Player CREATE
 ###################
@@ -23,24 +32,27 @@ def getRedisConnection():
 def player_create():
   data = json.loads(request.data)
 
+  lookupRow = sqlLookupPlayer(data['name'])
   # 1. store id and name in mysql
+  if lookupRow:
+    return jsonify("ERROR: record " + data['name'] + " already exists"), 500
+  
   mysqlcon = getMySqlConnector()
-  try:
-    cursor = mysqlcon.cursor()
-    query = "INSERT INTO " + os.environ['MYSQL_DATABASE'] + ".player(identifier, player_name) VALUES (" + data['id'] + ",'" + data['name'] + "');"
-    cursor.execute(query)
-    mysqlcon.commit()
-    cursor.close()
-  except mysql.connector.Error as error:
-    return jsonify("ERROR: record " + data['name'] + "-" + data['id'] + " already exists"), 500
+  cursor = mysqlcon.cursor()
+  query = "INSERT INTO " + os.environ['MYSQL_DATABASE'] + ".player(player_name, gold_amount) VALUES ('" + data['name'] + "', 0);"
+  cursor.execute(query)
+  mysqlcon.commit()
+  cursor.close()
+
+    
 
   # 2. store id and gold in redis
   cache = getRedisConnection()
-  cache.mset({ str(data['id']): '0' })
+  cache.mset({ lookupRow[0]: '0' })
 
   return {
-    "player_create_id": str(data['id']),
-    "player_create_name": str(data['name'])
+    "player_create_id": str(lookupRow[0]),
+    "player_create_name": str(lookupRow[1])
   }
 
 
@@ -52,21 +64,16 @@ def player_get():
   data = json.loads(request.data)
 
   # 1. retrieve id and name from mysql
-  mysqlcon = getMySqlConnector()
-  cursor = mysqlcon.cursor(buffered=True)
-  query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player WHERE identifier = " + str(data['id']) + " AND player_name = '" + data['name'] + "'"
-  cursor.execute(query)
-  if cursor.rowcount < 1:
-    return jsonify("ERROR: unable to find name and id: " + data['name'] + " " + str(data['id'])), 404
+  lookupRow = sqlLookupPlayer(data['name'])
+  if not lookupRow:
+    return jsonify("ERROR: unable to find name: " + data['name']), 404
 
   # 2. retrieve gold from redis
   cache = getRedisConnection()
-  goldcount = cache.get( str(data['id']) )
+  goldcount = cache.get( lookupRow[0] )
 
-  data['gold'] = int(goldcount)
-
-  cursor.close()
-  mysqlcon.close()
+  if goldcount:
+    data['gold'] = int(goldcount)
 
   return str(data), 200
 
