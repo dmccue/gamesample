@@ -38,6 +38,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     volumes:
     - mysql_data:/var/lib/mysql
+    - $PWD/img_mysql/CreateDB.sql:/docker-entrypoint-initdb.d/CreateDB.sql:ro
     restart: always
     ports:
     - 3306
