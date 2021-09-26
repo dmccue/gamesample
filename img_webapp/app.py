@@ -94,6 +94,18 @@ def player_get():
 
   return str(lookupRow), 200
 
+@app.route('/debug')
+def debug_get():
+  mysqlcon = getMySqlConnector()
+  cursor = mysqlcon.cursor(buffered=True)
+  query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player;"
+  cursor.execute(query)
+  if cursor.rowcount < 1:
+    return []
+  return list(cursor.fetchall()), 200
+
+
+
 
 @app.route('/')
 def hello():
