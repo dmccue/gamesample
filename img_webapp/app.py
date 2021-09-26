@@ -88,7 +88,7 @@ def player_get():
   if lookupRow[2] != goldcount:
     mysqlcon = getMySqlConnector()
     cursor = mysqlcon.cursor(buffered=True)
-    query = "UPDATE " + os.environ['MYSQL_DATABASE'] + ".player SET gold_amount = " + str(goldcount) + " WHERE id = " + str(goldcount) + ";"
+    query = "UPDATE " + os.environ['MYSQL_DATABASE'] + ".player SET gold_amount = " + str(goldcount) + " WHERE id = " + lookupRow[0] + ";"
     cursor.execute(query)
     lookupRow[2] = goldcount
 
@@ -101,8 +101,8 @@ def debug_get():
   query = "SELECT * FROM " + os.environ['MYSQL_DATABASE'] + ".player;"
   cursor.execute(query)
   if cursor.rowcount < 1:
-    return []
-  return list(cursor.fetchall()), 200
+    return [], 200
+  return jsonify(cursor.fetchall()), 200
 
 
 
