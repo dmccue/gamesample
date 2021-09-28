@@ -63,16 +63,21 @@ def player_create():
 ###################
 # Player GET
 ###################
-@app.route('/player/get', methods=['POST'])
+@app.route('/player/get', methods=['GET','POST'])
 def player_get():
-  data = json.loads(request.data)
+  id,name = None,None
+
+  if 'id' in request.args:
+    id = request.args.get('id')
+  if 'name' in request.args:
+    name = request.args.get('name')
 
   # 1. retrieve id and name from mysql
   lookupRow = None
-  if 'id' in data.keys():
-    lookupRow = sqlLookupPlayer(data['id'], None)
-  elif 'name' in data.keys():
-    lookupRow = sqlLookupPlayer(None, data['name'])
+  if id:
+    lookupRow = sqlLookupPlayer(id, None)
+  elif name:
+    lookupRow = sqlLookupPlayer(None, name)
   if not lookupRow:
     return jsonify("ERROR: unable to find player"), 404
 

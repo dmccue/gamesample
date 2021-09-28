@@ -1,3 +1,6 @@
+#https://desktop.docker.com/mac/main/amd64/Docker.dmg
+
+
 sudo apt-get update
 sudo apt-get install -y \
     apt-transport-https \
