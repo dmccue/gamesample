@@ -52,13 +52,18 @@ bash stop.sh
 ### AWS Architecture - Using API only
 ![](docs/ArchDockerAWS.png)
 
+
 ### AWS Architecture - Using static webpages
 ![](docs/ArchDockerAWSStatic.png)
+
 
 ### AWS Architecture - FARGATE
 ![](docs/gamesampleFARGATE.png)
 
+
 ### AWS Architecture - Lambda
 ![](docs/gamesampleDYNAMODB.png)
 
+
 ### AWS Architecture - CodePipeline
+![](docs/CICDworkflow.png)
