@@ -4,8 +4,24 @@
 
 The application contained in this repository consists of an nginx loadbalancer container, one or more web application containers, a redis container and a mysql container.
 
-## Container descriptions
+## Request sequence
+
+1. Client makes an HTTP request to 127.0.0.1:8083
+2. Docker directs tcp/8083 to nginxlb tcp/4000
+3. nginxlb resolves DNS hostname 'webapp' to internal network IP
+4. nginxlb directs tcp/4000 to webapp tcp/5000
+5. webapp flask application receives traffic on tcp/5000 and performs function based on url
+6. /player/create creates a row in mysql and a record in redis
+7. /player/get reads from redis and mysql
+8. Redis request is returned to webapp
+9. MySQL request is returned to webapp
+10. webapp request is returned to nginxlb
+11. nginxlb request is returned to client
+
 ![](docs/HTTPPlayerRequest.png)
+
+## Container descriptions
+
 ### Nginx loadbalancer container (NGINXLB)
 Purpose: This container provides a frontend interface for webtraffic.  The nginx proxy will forward the request on tcp port 8083 to the internal inteface of the web application container on port 5000.  The nginx loadbalancer will query DNS records in a round-robin mechanism to resolve the alias of 'webapp' set by docker-compose to an internal IP of one of the webapp containers. nginx listens internally on tcp port 4000 and is directed to port 8083 externally by docker which then presents the port to the host operating system on localhost:8083.
 
