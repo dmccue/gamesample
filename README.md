@@ -18,7 +18,7 @@ Purpose: Redis is an in-memory cache and can be used to store and update frequen
 ### MySQL container (MYSQL)
 Purpose: MySQL is a relational database which stores information relating to the player such as player name and player gold.  When a player is created a row is created in the gamesample database and player table to store for future lookups.  The gold is initially set to 0 but can be updated via the webapp.
 
-## Installation
+## Installation/Usage
 
 To install this sample application please follow the instructions below:
 
@@ -46,3 +46,19 @@ In an alternative window type:
 ```bash
 bash stop.sh
 ```
+
+## Future improvements
+
+### AWS Architecture - Using API only
+![](docs/ArchDockerAWS.png)
+
+### AWS Architecture - Using static webpages
+![](docs/ArchDockerAWSStatic.png)
+
+### AWS Architecture - FARGATE
+![](docs/gamesampleFARGATE.png)
+
+### AWS Architecture - Lambda
+![](docs/gamesampleDYNAMODB.png)
+
+### AWS Architecture - CodePipeline
