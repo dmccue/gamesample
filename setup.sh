@@ -1,4 +1,6 @@
-#https://desktop.docker.com/mac/main/amd64/Docker.dmg
+#!/bin/bash
+
+[ "$(uname)" == "Darwin" ] && echo Please install docker from https://desktop.docker.com/mac/main/amd64/Docker.dmg && exit 1
 
 
 sudo apt-get update
