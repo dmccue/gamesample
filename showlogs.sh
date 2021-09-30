@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose logs
+docker-compose logs -f
