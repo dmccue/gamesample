@@ -46,21 +46,21 @@ git clone https://github.com/dmccue/gamesample.git && cd gamesample
 ### Starting
 To run the stack please run:
 ```bash
-bash start.sh <number of webapp containers>
+./start.sh <number of webapp containers>
 ```
 Wait for the stack to create and display output from the nginxlb and webapp containers
 
 ### Testing
 In an alternative window type:
 ```bash
-bash test.sh
+./test.sh
 ```
 You should see the responses to curl commands displayed in the terminal
 
 ### Stopping
 In an alternative window type:
 ```bash
-bash stop.sh
+./stop.sh
 ```
 
 ## Future improvements

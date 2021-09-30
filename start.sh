@@ -8,4 +8,4 @@ export MYSQL_PASSWORD=gamesample
 
 webappnum=3
 [ "$1" ] && webappnum=$1
-docker-compose up --build --scale webapp=$webappnum
+docker-compose up -d --build --scale webapp=$webappnum
